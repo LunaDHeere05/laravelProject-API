@@ -2,21 +2,24 @@ const db = require("../db");
 const validation = require("./validation");
 
 const postService = {
-    // Retrieve all posts
-    getAllPosts: () => {
-        return new Promise((resolve, reject) => {
-            db.query("SELECT * FROM posts", (err, results) => {
-                if (err) {
-                    console.error("Error fetching posts:", err);
-                    reject(err);
-                } else {
-                    resolve(results);
-                }
-            });
+    //all posts
+    getAllPosts: (limit = 10, offset = 0) => {
+    return new Promise((resolve, reject) => {
+        const query = "SELECT * FROM posts LIMIT ? OFFSET ?";
+        
+        db.query(query, [parseInt(limit), parseInt(offset)], (err, results) => {
+            if (err) {
+                console.error("Error fetching posts:", err);
+                reject(err);
+            } else {
+                resolve(results);
+            }
         });
-    },
+    });
+},
 
-    // Retrieve a post by ID
+
+    //post by ID
     getPostById: (id) => {
         return new Promise((resolve, reject) => {
             db.query("SELECT * FROM posts WHERE id = ?", [id], (err, results) => {
@@ -30,12 +33,11 @@ const postService = {
         });
     },
 
-    // Update a post with dynamic fields
+    // Update post
     updatePost: (id, data) => {
         return new Promise((resolve, reject) => {
             let sanitizedData = {};
 
-            // Sanitize and validate required fields
             if (data.title) {
                 if (data.title.length >= 3) {
                     sanitizedData.title = data.title.replace(/<\/?[^>]+(>|$)/g, "");
@@ -53,13 +55,11 @@ const postService = {
                 sanitizedData.cover_picture = data.cover_picture.replace(/<\/?[^>]+(>|$)/g, "");
             }
 
-            // Ensure at least one field is provided for update
             if (Object.keys(sanitizedData).length === 0) {
                 reject("No valid fields provided for update");
                 return;
             }
 
-            // Build the update query dynamically
             const setFields = [];
             const setValues = [];
 
@@ -101,30 +101,31 @@ const postService = {
         });
     },
 
-    // Create a new post
-    createPost: (data) => {
+    // Create new post
+   // Create new post
+createPost: async (data) => {
+    try {
+        // Await the validation result
+        const errors = await validation.validatePost(data);
+        if (errors) {
+            throw errors; // Throw errors if validation fails
+        }
+
+        // Sanitize and prepare the data
+        const title = validation.sanitizeString(data.title);
+        const content = validation.sanitizeString(data.content);
+        const cover_picture = data.cover_picture
+            ? validation.sanitizeString(data.cover_picture)
+            : null;
+
+        const user_id = data.user_id;
+
+        const insertQuery = `
+            INSERT INTO posts (title, content, cover_picture, user_id, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, NOW(), NOW())
+        `;
+
         return new Promise((resolve, reject) => {
-            // Validate input data
-            const errors = validation.validatePost(data);
-            if (errors) {
-                reject(errors);
-                return;
-            }
-
-            // Sanitize input to prevent HTML injection
-            const title = validation.sanitizeString(data.title);
-            const content = validation.sanitizeString(data.content);
-            const cover_picture = data.cover_picture
-                ? validation.sanitizeString(data.cover_picture)
-                : null;
-
-            const user_id = data.user_id;
-
-            const insertQuery = `
-                INSERT INTO posts (title, content, cover_picture, user_id, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, NOW(), NOW())
-            `;
-
             db.query(insertQuery, [title, content, cover_picture, user_id], (err, result) => {
                 if (err) {
                     console.error("Error creating post:", err);
@@ -134,7 +135,12 @@ const postService = {
                 }
             });
         });
-    },
+    } catch (error) {
+        console.error("Validation or creation error:", error);
+        throw error; // Ensure errors are propagated correctly
+    }
+},
+
 };
 
 module.exports = postService;

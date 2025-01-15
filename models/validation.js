@@ -2,50 +2,70 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 
 const validation = {
-    // Check if a value exists and is not empty
     isRequired: (value) => {
         return value !== undefined && value !== null && value !== '';
     },
 
-    // Check if a string has a minimum length
     minLength: (value, min) => {
         return typeof value === 'string' && value.length >= min;
     },
 
-    // Validate if a value is a number
     isNumber: (value) => {
         return !isNaN(parseFloat(value)) && isFinite(value);
     },
 
-    // Sanitize a string to prevent HTML injection
     sanitizeString: (value) => {
         return typeof value === 'string' ? value.replace(/<\/?[^>]+(>|$)/g, '') : value;
     },
+    isEmailTaken: async (email) => {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT COUNT(*) AS count FROM users WHERE email = ?';
+            db.query(query, [email], (err, results) => {
+                if (err) {
+                    console.error("Error checking email:", err);
+                    return reject(err); // Reject promise if there's an error
+                }
+                resolve(results[0].count > 0); // Resolve true if email exists, false otherwise
+            });
+        });
+    },
+    checkUserExists: async (userId) => {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT COUNT(*) AS count FROM users WHERE id = ?';
+            db.query(query, [userId], (err, results) => {
+                if (err) {
+                    console.error("Error checking user existence:", err);
+                    return reject(err); // Reject promise if there's an error
+                }
+                resolve(results[0].count > 0); // Resolve true if user exists, false otherwise
+            });
+        });
+    },
 
-    // Validate user data
-    validateUser: (data) => {
+    validateUser: async (data) => {
         const errors = [];
 
-        if (!userData.username) {
-            errors.push("Username cannot be empty.");
+        if (!data.name) {
+            errors.push("name cannot be empty.");
         }else{
-            if (!validation.minLength(data.username.trim(), 3)) {
-                errors.push("Username must be at least 3 characters long");
+            if (!validation.minLength(data.name.trim(), 3)) {
+                errors.push("name must be at least 3 characters long");
             }
-            else if(data.username.trim().match(/\d+/g) != null){
-                errors.push("Username cannot contain numbers.");
+            else if(data.name.trim().match(/\d+/g) != null){
+                errors.push("name cannot contain numbers.");
             }else{
-                const username = validation.sanitizeString(data.username);
+                const name = validation.sanitizeString(data.name);
             }
         }
 
         //email
 
-        if (!userData.email) {
+        if (!data.email) {
             errors.push("Email cannot be empty.");
-        }else if(userData.email = await isEmailTaken(data.email)){
+        }else if(await validation.isEmailTaken(data.email)){
             errors.push("Email is already taken.");
         }else{
+            //email moet juiste formaat hebben
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if(!emailPattern.test(data.email.trim())){
                 errors.push("Email is not valid.");
@@ -57,7 +77,7 @@ const validation = {
 
         //password
 
-        if(!userData.password){
+        if(!data.password){
             errors.push("Password cannot be empty.");
         }else{
             if (!validation.minLength(data.password.trim(), 6)) {
@@ -70,50 +90,79 @@ const validation = {
         //end required fields
         //date of birth
 
-
         //profile picture
 
-        if(userData.profile_picture){
+        if(data.profile_picture){
             const allowedFormats = ['jpg', 'jpeg', 'png'];
-            const extension = userData.profile_picture.split('.').pop().toLowerCase();
+            const extension = data.profile_picture.split('.').pop().toLowerCase();
             if(!allowedFormats.includes(extension)){
                 errors.push("Profile picture must be a jpg, jpeg or png file.");
             }
-        }else if(!userData.profile_picture){
-            userData.profile_picture = 'default.jpg';
+        }else if(!data.profile_picture){
+            data.profile_picture = 'default.jpg';
         }else{
             const profile_picture = validation.sanitizeString(data.profile_picture);
         }
 
         //about me
 
-        if(userData.abt_me){
+        if(data.abt_me){
             const aboutMe = validation.sanitizeString(data.abt_me);
         }
 
-    },
-
-
-    // Validate post data
-    validatePost: (data) => {
-        const errors = [];
-
-        if (!validation.isRequired(data.title)) {
-            errors.push("Title is required");
-        } else if (!validation.minLength(data.title, 3)) {
-            errors.push("Title must be at least 3 characters long");
-        }
-
-        if (!validation.isRequired(data.content)) {
-            errors.push("Content is required");
-        }
-
-        if (!validation.isRequired(data.user_id) || !validation.isNumber(data.user_id)) {
-            errors.push("A valid user ID is required");
-        }
-
         return errors.length > 0 ? errors : null;
+
     },
+
+
+    validatePost: async (data, isNew) => {
+        const errors = [];
+    
+        if(isNew){
+            if (!validation.isRequired(data.user_id) || !validation.isNumber(data.user_id)) {
+                errors.push("A valid user ID is required.");
+            } else {
+                if (!await validation.checkUserExists(data.user_id)) {
+                    errors.push("User ID does not exist.");
+                }
+            }
+        }
+        if(isNew){
+            if (!validation.isRequired(data.title)) {
+                errors.push("Title is required.");
+            } else if (!validation.minLength(data.title, 3)) {
+                errors.push("Title must be at least 3 characters long.");
+            }
+        }
+    
+        // Content: optional for updates, required for new posts
+        if (isNew) {
+            if (!validation.isRequired(data.content)) {
+                errors.push("Content is required.");
+            } else if (data.content && data.content.length < 10) {
+                errors.push("Content must be at least 10 characters long.");
+            }
+        } else {
+            // Content is optional for updates
+            if (data.content && data.content.length < 10) {
+                errors.push("Content must be at least 10 characters long.");
+            }
+        }
+    
+        // User Id: optional for updates, required for new posts
+        if (isNew) {
+            if (!validation.isRequired(data.user_id) || !validation.isNumber(data.user_id)) {
+                errors.push("A valid user ID is required.");
+            } else {
+                if (!await validation.checkUserExists(data.user_id)) {
+                    errors.push("User ID does not exist.");
+                }
+            }
+        }
+    
+        return errors.length > 0 ? errors : null;
+    }
+    
 };
 
 module.exports = validation;
