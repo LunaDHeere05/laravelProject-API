@@ -35,3 +35,7 @@ PORT=5500</code></pre>
     <pre><code>node index.js</code></pre>
     <p>De server draait nu op <code>http://127.0.0.1:5500</code>.</p>
     <p>Klik op de link die je in de terminal krijgt en bekijk de API documentatie.</p>
+
+<h1>Sources</h1>
+<a href="https://chatgpt.com/share/67882ea7-75a0-8002-b89b-27ab85932fb3">Setup met behulp van chatgpt</a>
+<a href="https://chatgpt.com/share/67882f1e-02b0-8002-8e00-03010475e5c3">debugging met chatgpt</a>
