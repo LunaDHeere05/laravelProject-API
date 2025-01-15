@@ -15,7 +15,7 @@
 <h3>Stap 1: Repository klonen</h3>
     <p>clone dit project naar je eigen apparaat. </p>
 
-  <h3>Stap 2: Installeren van afhankelijkheden</h3>
+  <h3>Stap 2: Installeren van dependencies</h3>
     <pre><code>npm install</code></pre>
 
   <h3>Stap 3: Configuratie</h3>
@@ -36,5 +36,5 @@ PORT=5500</code></pre>
     <p>Klik op de link die je in de terminal krijgt en bekijk de API documentatie.</p>
 
 <h1>Sources</h1>
-<a href="https://chatgpt.com/share/67882ea7-75a0-8002-b89b-27ab85932fb3">Setup met behulp van chatgpt</a>
+<a href="https://chatgpt.com/share/67882ea7-75a0-8002-b89b-27ab85932fb3">Setup met behulp van chatgpt</a> <br>
 <a href="https://chatgpt.com/share/67882f1e-02b0-8002-8e00-03010475e5c3">debugging met chatgpt</a>
