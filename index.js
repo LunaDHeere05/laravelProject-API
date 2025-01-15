@@ -3,6 +3,7 @@ const app = express();
 const PORT = 5500;
 const db = require('./db');
 const userService = require('./models/userModel');
+const postService = require('./models/postModel');
 const bodyParser = require('body-parser');
 
 app.use(express.json());
@@ -89,6 +90,81 @@ app.delete('/users/:id', (req, res) => {
         res.status(500).send({ message: 'Server error' });
       });
   });
+
+//posts
+
+app.get('/posts', async (req, res) => {
+  try {
+      const posts = await postService.getAllPosts();
+      res.status(200).json(posts);
+  } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).send({ message: 'Server error' });
+  }
+});
+app.get('/posts/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+      const post = await postService.getPostById(id);
+      if (post.length === 0) {
+          res.status(404).send({ message: 'Post not found' });
+      } else {
+          res.status(200).json(post[0]);
+      }
+  } catch (error) {
+      console.error("Error fetching post:", error);
+      res.status(500).send({ message: 'Server error' });
+  }
+});
+
+app.post('/posts', async (req, res) => {
+  const data = req.body;
+  try {
+      const newPostId = await postService.createPost(data);
+      res.status(201).json({
+          message: 'Post created successfully!',
+          postId: newPostId
+      });
+  } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ message: error });
+  }
+});
+
+
+app.put('/posts/:id', (req, res) => {
+  const id = req.params.id;
+  const data = req.body;
+
+  postService.updatePost(id, data)
+      .then((result) => {
+          if (result === 0) {
+              res.status(404).send({ message: 'Post not found' });
+          } else {
+              res.status(200).send({ message: 'Post updated successfully' });
+          }
+      })
+      .catch((error) => {
+          console.error("Error updating post:", error);
+          res.status(500).send({ message: 'Server error' });
+      });
+});
+
+app.delete('/posts/:id', (req, res) => {
+  const id = req.params.id;
+  postService.deletePost(id)
+      .then((result) => {
+          if (result === 0) {
+              res.status(404).send({ message: 'Post not found' });
+          } else {
+              res.status(200).send({ message: 'Post deleted successfully' });
+          }
+      })
+      .catch((error) => {
+          console.error("Error deleting post:", error);
+          res.status(500).send({ message: 'Server error' });
+      });
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
