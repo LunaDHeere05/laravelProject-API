@@ -13,8 +13,7 @@
     </ul>
 
 <h3>Stap 1: Repository klonen</h3>
-    <pre><code>git clone &lt;repository-url&gt;
-cd &lt;repository-map&gt;</code></pre>
+    <p>clone dit project naar je eigen apparaat. </p>
 
   <h3>Stap 2: Installeren van afhankelijkheden</h3>
     <pre><code>npm install</code></pre>
