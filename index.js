@@ -61,10 +61,11 @@ app.get('/users/:date_birth/:id', async (req, res) => {
 
 app.post('/users', async (req, res) => {
   const data = req.body;
+  const isNew = true;
 
   console.log("Data received in POST request:", req.body);
   try {
-      const userValidationErrors = await validation.validateUser(data);
+      const userValidationErrors = await validation.validateUser(data, isNew);
       if (userValidationErrors && userValidationErrors.length > 0) {
           return res.status(400).json({ errors: userValidationErrors });
       }
@@ -80,9 +81,10 @@ app.post('/users', async (req, res) => {
 app.put('/users/:id', async (req, res) => {
   const id = req.params.id;
   const data = req.body;
+  const isNew = false;
 
   try {
-      const userValidationErrors = await validation.validateUser(data);
+      const userValidationErrors = await validation.validateUser(data, isNew);
       if (userValidationErrors && userValidationErrors.length > 0) {
           return res.status(400).json({ errors: userValidationErrors });
       }
